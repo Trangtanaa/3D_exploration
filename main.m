@@ -15,11 +15,12 @@ close all;
 % Monitor area
 %Obstacle_Area = genarea();
 load("Obstacle_Area.mat");
+%%
 Covered_Area = zeros(size(Obstacle_Area,1),size(Obstacle_Area,2),size(Obstacle_Area,3));
 [obs_x, obs_y, obs_z] = ind2sub(size(Obstacle_Area),find(Obstacle_Area==1));
 
 % nodes info
-MaxIt = 300;              % Maximum Number of Iterations
+MaxIt = 200;              % Maximum Number of Iterations
 a = 1;                    % Acceleration Coefficient Upper Bound
 N = 60;
 rc = 30;
@@ -29,7 +30,7 @@ trap_thresh = 10;         % trap node condition
 float_thresh= 100;        % float node condition
 
 %moving parameter
-v=10;                      % max velocity of node
+v=5;                      % max velocity of node
 
 %% Init first pop
 figure;
@@ -45,7 +46,7 @@ trap_matrix = zeros(N,1);
 
 % Array to Hold Best Cost Values
 BestCostIt = zeros(MaxIt, 1);
-popIt=repmat(reshape(pop,[1 N*3]),[MaxIt 1]);
+popIt=zeros(MaxIt,3*N);
 
 %%     ABC Main Loop
 for it = 1:MaxIt
@@ -119,7 +120,7 @@ for it = 1:MaxIt
                 % trap node can explore more
                 if old_neigh_Cov-new_neigh_Cov>0.05*old_neigh_Cov
                     fitness_ratio=1;
-                    k = K(randi([1 numel(K)]));
+                    %k = K(randi([1 numel(K)]));
                     al_pop = pop(i,:) + phi.*([v v v]);
                     no_profit_move_counts(i)=float_thresh/5;
                 % trap node get stuck in local optimum
@@ -134,7 +135,9 @@ for it = 1:MaxIt
                 if rand() >= 0.2
                     [~, n] = max(trap_matrix(K));
                     k=K(n);                             % k is the node that have the most value of no move counts
-                    al_pop = pop(i,:) + abs(phi).*( pop(k,:) - pop(i,:) )*(v/rc);
+                    diff=abs(phi).*( pop(k,:) - pop(i,:) );
+                    diff=max(min(diff,v),-v);
+                    al_pop = pop(i,:) + diff;
                     fitness_ratio=0.993;
                 else
                     al_pop = pop(i,:) + phi.*[v v v];
@@ -144,7 +147,9 @@ for it = 1:MaxIt
             else
                 fitness_ratio=1;
                 k = K(randi([1 numel(K)]));
-                al_pop = pop(i,:) + (phi).*( pop(k,:) - pop(i,:) )*(v/rc);
+                diff=(phi).*( pop(k,:) - pop(i,:) );
+                diff=max(min(diff,v),-v);
+                al_pop = pop(i,:) + diff;
             end
         %% boundary check
             al_pop(1) = min(max(al_pop(1,1), min(obs_x)+1),size(Obstacle_Area,1));
@@ -160,7 +165,7 @@ for it = 1:MaxIt
         %% Comparision of cost function
         neighbor_G=Graph([neighbor_pop; al_pop],rc);
         if Connectivity_graph(neighbor_G,[])==1
-            [new_neigh_Cov, Covered_Area]=Cov_Func([neighbor_pop; al_pop  ],rs,Obstacle_Area,Covered_Area);
+            [new_neigh_Cov, ~]=Cov_Func([neighbor_pop; al_pop  ],rs,Obstacle_Area,Covered_Area);
             [old_neigh_Cov, ~]=Cov_Func([neighbor_pop; pop(i,:)],rs,Obstacle_Area,Covered_Area);
             if (new_neigh_Cov) > (old_neigh_Cov)
                 no_move_counts(i)=0;
@@ -180,11 +185,11 @@ for it = 1:MaxIt
     end
     end
     clear i j k K n al_pop neighbor_pop neighbor_G phi decisions_order decision new_neigh_Cov old_neigh_Cov fitness_ratio obs_check2 obs_check1;
-    clear orderInLayers Layers
+    clear orderInLayers Layers diff;
     
     % Store Best Cost in that iteration
-    [BestCostIt(it), Covered_Area] = Cov_Func(pop,rs,Obstacle_Area,Covered_Area);
-    %popIt(it,:)= pop;
+    [BestCostIt(it), ~] = Cov_Func(pop,rs,Obstacle_Area,Covered_Area);
+    popIt(it,:)=reshape(pop,[1 N*3]);
     %disp([num2str(BestCostIt(it)) '  at iteration:  '  num2str(it)]);
 
     %% plot
@@ -201,10 +206,9 @@ for it = 1:MaxIt
     end
     
     axis([0 100 0 100 0 100]); % Set the limits for X, Y, and Z axes
+    
     [obs_x, obs_y, obs_z] = ind2sub(size(Obstacle_Area),find(Obstacle_Area==1));
     plot3(obs_y, obs_x, obs_z,'.', 'MarkerSize', 2, 'Color', 'blue');
-    [obs_x, obs_y, obs_z] = ind2sub(size(Obstacle_Area),find(Covered_Area==-2));
-    plot3(obs_y, obs_x, obs_z,'.', 'MarkerSize', 4, 'Color', 'red');
     isosurface(0:100, 0:100, 0:100, Obstacle_Area, 0.5); % Correct dimension matching
     axis equal;
     xlabel('X-axis');
@@ -217,13 +221,10 @@ for it = 1:MaxIt
     light('Position', [1 1 1], 'Style', 'infinite');
     lighting gouraud;
     drawnow;
-    clear x y z x1 y1 z1 i;
+    clear x y z x1 y1 z1 i ;
 end
+clear obs_x obs_y obs_z;
 %%
 %save(name)
 %end
-figure
-[cov_x, cov_y, cov_z] = ind2sub(size(Covered_Area),find(Covered_Area==0));
-plot3(cov_y, cov_x, cov_z,'.', 'MarkerSize', 2, 'Color', 'red');
-hold on;
-plot3(obs_y, obs_x,obs_z,'.', 'MarkerSize', 2, 'Color', 'blue');
+clear a ans Covered_Area float_thresh G initpop MaxIt no_move_counts no_profit_move_counts popIt2 trap_matrix trap_thresh;

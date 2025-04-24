@@ -11,13 +11,13 @@ function [coverage , Covered_Area] = Cov_Func(pop,rs,Obstacle_Area,Covered_Area)
 
 
 %% recover sensor uncovered area
-%{
+
 % find all covered point and recover them to uncover status
 [obs_x, obs_y, obs_z] = ind2sub(size(Covered_Area),find(Covered_Area==1));
 for i = 1:numel(obs_x)
     Covered_Area(obs_x(i), obs_y(i), obs_z(i)) = 0;
 end
-%}
+
 %% check all covered area
 for j=1:size(pop,1)
     % x value of sensor j is pop(j,1)
@@ -76,8 +76,8 @@ count1=numel(ind2sub(size(Covered_Area),find(Covered_Area==1)));		              
 count2=numel(ind2sub(size(Covered_Area),find(Covered_Area==-2)));		                          % count covered points on unwanted location (obstacles)
 count3=numel(Obstacle_Area)-numel(ind2sub(size(Obstacle_Area),find(Obstacle_Area==1)));           % count total points on wanted location
 
-coverage=((count1-count2)/count3);	    % function to avoid obstacles
-%coverage=(count1/count3);		        % function to aim on wanted area
+%coverage=((count1-count2)/count3);	    % function to avoid obstacles
+coverage=(count1/count3);		        % function to aim on wanted area
 
 %% recover obs covered area
 %{
