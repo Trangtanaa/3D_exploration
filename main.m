@@ -24,7 +24,7 @@ MaxIt = 200;              % Maximum Number of Iterations
 a = 1;                    % Acceleration Coefficient Upper Bound
 N = 60;
 rc = 30;
-rs = 15;
+rs = 15*ones(1,N);
 sink=[90 90 90];
 trap_thresh = 10;         % trap node condition
 float_thresh= 100;        % float node condition
@@ -199,9 +199,9 @@ for it = 1:MaxIt
     
     [x1,y1,z1] = sphere;
     for i=1:size(pop,1)
-        x=x1*rs;
-        y=y1*rs;
-        z=z1*rs;
+        x=x1*rs(i);
+        y=y1*rs(i);
+        z=z1*rs(i);
         surf(y+pop(i,2),x+pop(i,1),z+pop(i,3),'LineStyle',':','EdgeColor','cyan','EdgeAlpha',0.6,'FaceColor','none');
     end
     
